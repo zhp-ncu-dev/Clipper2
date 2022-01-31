@@ -439,7 +439,7 @@ int main(int argc, char* argv[])
   //c.Execute(clipType, subj_pft, solutionTree, solution);
 
   cout << "\nFinished!\n\n";
-  SaveToFile("solution.txt", solution, scale);
+  SaveToFile("./tests/solution.txt", solution, scale);
 
   //let's see the result too ...
   SVGBuilder svg;
@@ -456,7 +456,7 @@ int main(int argc, char* argv[])
   svg.style.penClr = 0xFF003300;
   svg.style.pft = FillRule::NonZero;
   svg.AddPaths(solution);
-  svg.SaveToFile("solution.svg", svg_scale);
+  svg.SaveToFile("./tests/solution.svg", svg_scale);
 
   //finally, show the svg image in the default viewing application
   //system("solution.svg"); 

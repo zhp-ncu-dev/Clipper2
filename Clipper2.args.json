@@ -1,0 +1,14 @@
+{
+  "FileVersion": 2,
+  "Id": "a304d4e5-fd20-4639-9e0d-080968f107f9",
+  "Items": [
+    {
+      "Id": "9d3720af-fb9a-47c1-a538-d24ba5d298b6",
+      "Command": ".\\tests\\1-P.txt .\\tests\\1-Q.txt INTERSECTION EVENODD EVENODD"
+    },
+    {
+      "Id": "e22fcf85-0c7d-4cdf-9231-6e12178653e0",
+      "Command": ".\\tests\\4-P.txt .\\tests\\4-Q.txt INTERSECTION EVENODD EVENODD"
+    }
+  ]
+}

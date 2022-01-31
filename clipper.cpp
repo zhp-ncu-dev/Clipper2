@@ -111,6 +111,9 @@ inline bool IsOpen(const Active &e) {
 }
 //------------------------------------------------------------------------------
 
+inline bool IsOpen(const OutRec &outrec) {
+	return (outrec.state == OutRecState::Open);
+}
 //------------------------------------------------------------------------------
 
 inline Active *GetPrevHotEdge(const Active &e) {
@@ -1207,6 +1210,12 @@ void Clipper::JoinOutrecPaths(Active &e1, Active &e2) {
 	e2.outrec->pts = NULL;
 	e2.outrec->owner = e1.outrec;  //this may be redundant
 
+	if (IsOpen(e1) && ((e1.local_min->vertex->flags & (VertexFlags::vfOpenStart | VertexFlags::vfOpenEnd)) != VertexFlags::vfNone)) 
+	{
+		e2.outrec->pts = e1.outrec->pts;
+		e1.outrec->pts = NULL;
+	}
+		
 	//and e1 and e2 are maxima and are about to be dropped from the Actives list.
 	e1.outrec = NULL;
 	e2.outrec = NULL;
@@ -1449,7 +1458,7 @@ inline void Clipper::DeleteFromAEL(Active &e) {
 		prev->next_in_ael = next;
 	else
 		actives_ = next;
-	if (next) 
+	if (next)
 		next->prev_in_ael = prev;
 	delete &e;
 }
@@ -1523,7 +1532,7 @@ bool Clipper::Execute(ClipType clipType, FillRule ft, PolyTreeI &solution_closed
 	solution_open.clear();
 	try {
 		ExecuteInternal(clipType, ft);
- 		BuildResultTreeI(solution_closed, &solution_open);
+		BuildResultTreeI(solution_closed, &solution_open);
 	} catch (...) {
 		executed = false;
 	}
@@ -1770,7 +1779,7 @@ void Clipper::DoHorizontal(Active &horz)
 
 	int64_t horz_left, horz_right;
 	bool is_left_to_right = ResetHorzDirection(horz, max_pair, horz_left, horz_right);
-	if (IsHotEdge(horz)) 
+	if (IsHotEdge(horz))
 		AddOutPt(horz, PointI(horz.curr_x, horz.bot.y));
 
 	while (true) {  //loops through consec. horizontal edges (if open)
@@ -1787,9 +1796,10 @@ void Clipper::DoHorizontal(Active &horz)
 			//or if we've got to the } of an intermediate horizontal edge ...
 			if (e->curr_x == horz.top.x && !isMax && !IsHorizontal(*e)) {
 				pt = NextVertex(horz).pt;
-				if ((is_left_to_right && (TopX(*e, pt.y) > pt.x)) ||	
-				   (!is_left_to_right && (TopX(*e, pt.y) < pt.x))) break;  //wrong result
-
+				if ((is_left_to_right && (TopX(*e, pt.y) >= pt.x)) ||
+						(!is_left_to_right && (TopX(*e, pt.y) <= pt.x))) break;//wrong result
+				//if ((is_left_to_right && (TopX(*e, pt.y) > pt.x)) ||
+				//	(!is_left_to_right && (TopX(*e, pt.y) < pt.x))) break;  
 			}
 
 			if (e == max_pair) {
@@ -1824,14 +1834,14 @@ void Clipper::DoHorizontal(Active &horz)
 		is_left_to_right = ResetHorzDirection(horz, max_pair, horz_left, horz_right);
 
 		if (IsOpen(horz)) {
-			if (IsMaxima(horz)) 
+			if (IsMaxima(horz))
 				max_pair = GetMaximaPair(horz);
-			if (IsHotEdge(horz)) 
+			if (IsHotEdge(horz))
 				AddOutPt(horz, horz.bot);
 		}
 	}
 
-	if (IsHotEdge(horz)) 
+	if (IsHotEdge(horz))
 		AddOutPt(horz, horz.top);
 	if (!IsOpen(horz))
 		UpdateEdgeIntoAEL(&horz);  //this is the } of an intermediate horiz.
@@ -1870,7 +1880,7 @@ void Clipper::DoTopOfScanbeam(const int64_t y) {
 			} else {
 				//INTERMEDIATE VERTEX ...
 				UpdateEdgeIntoAEL(e);
-				if (IsHotEdge(*e)) 
+				if (IsHotEdge(*e))
 					AddOutPt(*e, e->bot);
 				if (IsHorizontal(*e))
 					PushHorz(*e);  //horizontals are processed later
@@ -1888,7 +1898,7 @@ Active *Clipper::DoMaxima(Active &e) {
 	if (IsOpen(e) && 
 		((e.vertex_top->flags & (VertexFlags::vfOpenStart | VertexFlags::vfOpenEnd)) != VertexFlags::vfNone)) 
 	{
-		if (IsHotEdge(e)) 
+		if (IsHotEdge(e))
 			AddOutPt(e, e.top);
 		if (!IsHorizontal(e)) {
 			if (IsHotEdge(e)) e.outrec = NULL;
@@ -1944,7 +1954,7 @@ bool Clipper::BuildResultI(PathsI &solution_closed, PathsI *solution_open) {
 
     for (const auto outrec : outrec_list_) {
       if (!outrec->pts) continue;
-      //OutPt *op = outrec->pts->next;
+	  //OutPt *op = outrec->pts->next;
 	  OutPt* op = outrec->pts;
       int cnt = PointCount(op);
 
@@ -1966,17 +1976,17 @@ bool Clipper::BuildResultI(PathsI &solution_closed, PathsI *solution_open) {
         for (int i = 0; i < cnt; i++) {
           p.push_back(PointI((int64_t)std::round(op->pt.x * inv_scale),
             (int64_t)std::round(op->pt.y * inv_scale)));
-          //op = op->next;
+		  //op = op->next;
 		  op = op->prev;
         }
       }
       else {
         for (int i = 0; i < cnt; i++) {
           p.push_back(op->pt);
-          //op = op->next;
+		  //op = op->next;
 		  op = op->prev;
-        }
-      }
+		}
+	  }
 
 	  if (outrec->owner)
 	  {
@@ -1989,7 +1999,7 @@ bool Clipper::BuildResultI(PathsI &solution_closed, PathsI *solution_open) {
 		  }
 	  }
 	  else
-		std::cout << "i: " << outrec->idx << ", cnt: " << cnt << std::endl;
+		  std::cout << "i: " << outrec->idx << ", cnt: " << cnt << std::endl;
 
       if (is_open)
         solution_open->push_back(p);

@@ -796,8 +796,7 @@ void CleanPaths(Paths<T> &paths, bool is_closed, double min_length, double min_a
 //------------------------------------------------------------------------------
 
 //Note: all clipping operations except for Difference are commutative.
-enum class ClipType { None=0, Intersection, Union, Difference, Xor };
-
+enum class ClipType { None, Intersection, Union, Difference, Xor };
 
 enum class PathType { Subject, Clip };
 
